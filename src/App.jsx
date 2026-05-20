@@ -205,23 +205,31 @@ RULES:
 async function callClaude(messages, systemPrompt) {
   const key = import.meta.env.VITE_GEMINI_KEY;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
-  const contents = messages.map(m => ({
+  
+  const historyForGemini = messages.slice(0,-1).map(m => ({
     role: m.role === "assistant" ? "model" : "user",
     parts: [{ text: m.text || m.content || "" }]
   }));
+  
+  const lastMsg = messages[messages.length-1];
+  const fullPrompt = `${systemPrompt}\n\nUser says: ${lastMsg?.text || lastMsg?.content || ""}`;
+  
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents,
+      contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
       generationConfig: { maxOutputTokens: 200, temperature: 0.9 }
     }),
   });
-  if(!response.ok){ const e=await response.json().catch(()=>({})); throw new Error(e.error?.message||`HTTP ${response.status}`); }
+  
+  if(!response.ok){ 
+    const e = await response.json().catch(()=>({})); 
+    throw new Error(e.error?.message||`HTTP ${response.status}`); 
+  }
   const data = await response.json();
   return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "...";
-}
+     }
 
 const GREETINGS = {
   "en-US":{ "first-date":"Hey! So glad we finally got to meet 😊 Are you nervous at all, or is it just me?","ask-out":"Hey! Yeah, I've definitely seen you around. What's up?","apology":"I wasn't sure you'd reach out. I'm here though. What did you want to say?","make-friends":"Hey! Are you enjoying the event? I don't think we've met 👋","confidence":"Well look who decided to just come say hi 😄 Bold move. I respect it." },
