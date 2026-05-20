@@ -203,14 +203,24 @@ RULES:
 }
 
 async function callClaude(messages, systemPrompt) {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:200, system:systemPrompt, messages }),
+  const key = import.meta.env.VITE_GEMINI_KEY;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+  const contents = messages.map(m => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.text || m.content || "" }]
+  }));
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents,
+      generationConfig: { maxOutputTokens: 200, temperature: 0.9 }
+    }),
   });
   if(!response.ok){ const e=await response.json().catch(()=>({})); throw new Error(e.error?.message||`HTTP ${response.status}`); }
   const data = await response.json();
-  return data.content?.map(b=>b.type==="text"?b.text:"").join("").trim()||"...";
+  return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "...";
 }
 
 const GREETINGS = {
