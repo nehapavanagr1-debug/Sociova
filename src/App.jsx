@@ -205,16 +205,17 @@ RULES:
 async function callClaude(messages, systemPrompt) {
   const key = import.meta.env.VITE_GEMINI_KEY;
   
-  // Usasync function callClaude(messages, systemPrompt) {
-  const key = import.meta.env.VITE_GEMINI_KEY;
-  
   // Using an all-origins proxy to completely bypass browser CORS blocks for your MVP
   const proxyUrl = "https://api.allorigins.win/raw?url=";
   const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
   const url = proxyUrl + encodeURIComponent(targetUrl);
 
-  const lastMsg = messages[messages.length - 1];
-  const userText = lastMsg?.text || lastMsg?.content || "hello";
+  // Transform conversation history array to perfectly fit Gemini's requirements
+  const formattedContents = messages.map(msg => ({
+    // Google expects "model" instead of "assistant" or "ai"
+    role: msg.role === "ai" || msg.role === "assistant" ? "model" : "user",
+    parts: [{ text: msg.text || msg.content || "" }]
+  }));
 
   const response = await fetch(url, {
     method: "POST",
@@ -222,13 +223,10 @@ async function callClaude(messages, systemPrompt) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      // ✅ Fixed the layout format to match Google Gemini's strict payload structure
       systemInstruction: {
         parts: [{ text: systemPrompt }]
       },
-      contents: [
-        { role: "user", parts: [{ text: userText }] }
-      ],
+      contents: formattedContents, // ✅ Sends full context history instead of just one message
       generationConfig: {
         maxOutputTokens: 150,
         temperature: 0.9
