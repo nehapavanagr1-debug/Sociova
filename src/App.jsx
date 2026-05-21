@@ -204,13 +204,20 @@ RULES:
 
 async function callClaude(messages, systemPrompt) {
   const key = import.meta.env.VITE_GEMINI_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
-  const lastMsg = messages[messages.length - 1]; const userText = lastMsg?.text || lastMsg?.content || "hello";
-    const userText = lastMsg?.text || lastMsg?.content || "hello";
+  
+  // Using an all-origins proxy to completely bypass browser CORS blocks for your MVP
+  const proxyUrl = "https://api.allorigins.win/raw?url=";
+  const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+  const url = proxyUrl + encodeURIComponent(targetUrl);
+
+  const lastMsg = messages[messages.length - 1];
+  const userText = lastMsg?.text || lastMsg?.content || "hello";
 
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
       system_instruction: {
         parts: [{ text: systemPrompt }]
