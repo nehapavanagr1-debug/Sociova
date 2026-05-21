@@ -205,6 +205,9 @@ RULES:
 async function callClaude(messages, systemPrompt) {
   const key = import.meta.env.VITE_GEMINI_KEY;
   
+  // Usasync function callClaude(messages, systemPrompt) {
+  const key = import.meta.env.VITE_GEMINI_KEY;
+  
   // Using an all-origins proxy to completely bypass browser CORS blocks for your MVP
   const proxyUrl = "https://api.allorigins.win/raw?url=";
   const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
@@ -219,7 +222,8 @@ async function callClaude(messages, systemPrompt) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      system_instruction: {
+      // ✅ Fixed the layout format to match Google Gemini's strict payload structure
+      systemInstruction: {
         parts: [{ text: systemPrompt }]
       },
       contents: [
