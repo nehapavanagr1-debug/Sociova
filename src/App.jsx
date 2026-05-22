@@ -205,14 +205,19 @@ RULES:
 async function callClaude(messages, systemPrompt) {
   const key = import.meta.env.VITE_GEMINI_KEY;
   
-  // Using an all-origins proxy to completely bypass browser CORS blocks for your MVP
+  // 🚨 Key Verification: Throws a clear error if Vercel misses the environment variable
+  if (!key) {
+    console.error("VITE_GEMINI_KEY is missing! Please add it to Vercel Environment Variables.");
+    throw new Error("API Key Missing");
+  }
+
+  // Using an all-origins proxy to completely bypass browser CORS blocks
   const proxyUrl = "https://api.allorigins.win/raw?url=";
   const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
   const url = proxyUrl + encodeURIComponent(targetUrl);
 
-  // History objects use { role: "user"|"model", text: "..." } — normalised by callers.
   const formattedContents = messages.map(msg => ({
-    role: msg.role,            // already "user" or "model"
+    role: msg.role,
     parts: [{ text: msg.text }]
   }));
 
@@ -225,7 +230,7 @@ async function callClaude(messages, systemPrompt) {
       systemInstruction: {
         parts: [{ text: systemPrompt }]
       },
-      contents: formattedContents, // ✅ Sends full context history instead of just one message
+      contents: formattedContents,
       generationConfig: {
         maxOutputTokens: 150,
         temperature: 0.9
