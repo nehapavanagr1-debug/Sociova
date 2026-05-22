@@ -210,12 +210,10 @@ async function callClaude(messages, systemPrompt) {
   const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
   const url = proxyUrl + encodeURIComponent(targetUrl);
 
-  // Transform conversation history array to perfectly fit Gemini's requirements.
-  // History objects must use { role: "user"|"model", text: "..." } — role names
-  // are already normalised by aiReply before being pushed to conversationRef.
+  // History objects use { role: "user"|"model", text: "..." } — normalised by callers.
   const formattedContents = messages.map(msg => ({
-    role: msg.role,                // already "user" or "model"
-    parts: [{ text: msg.text }]   // always use .text — never .content
+    role: msg.role,            // already "user" or "model"
+    parts: [{ text: msg.text }]
   }));
 
   const response = await fetch(url, {
@@ -553,7 +551,6 @@ export default function App(){
   const aiReply=useCallback(async(userText,currentScene,currentPersona,currentLang)=>{
     setAiTyping(true); setApiError("");
     try{
-      // Use "user"/"model" roles and "text" property to match Gemini's format exactly.
       conversationRef.current=[...conversationRef.current,{role:"user",text:userText}];
       const sys=buildSystemPrompt(currentPersona,currentScene,currentLang);
       const reply=await callClaude(conversationRef.current,sys);
@@ -586,7 +583,7 @@ export default function App(){
     const greeting=getGreeting(sc.id,ln.code);
     const m={id:Date.now(),role:"ai",text:greeting,ts:Date.now(),via:"text"};
     setMsgs([m]); setNewId(m.id); setAiTyping(false); setInput(""); setFeedback(null); setApiError("");
-    conversationRef.current=[{role:"assistant",content:greeting}];
+    conversationRef.current=[{role:"model",text:greeting}];
     setPage("chat");
     if(autoSpeak&&voice.supported) setTimeout(()=>voice.speak(greeting),600);
   }
