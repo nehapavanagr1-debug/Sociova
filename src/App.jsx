@@ -211,7 +211,7 @@ async function callClaude(messages, systemPrompt) {
   }
 
   // ✅ Call Gemini directly — no proxy needed, Gemini supports browser CORS
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
 
   // ✅ Fix role mapping: Gemini only accepts "user" or "model"
   const formattedContents = messages.map(msg => ({
