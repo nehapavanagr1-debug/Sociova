@@ -204,37 +204,28 @@ RULES:
 
 async function callClaude(messages, systemPrompt) {
   const key = import.meta.env.VITE_GEMINI_KEY;
-  
-  // 🚨 Key Verification: Throws a clear error if Vercel misses the environment variable
+
   if (!key) {
-    console.error("VITE_GEMINI_KEY is missing! Please add it to Vercel Environment Variables.");
+    console.error("VITE_GEMINI_KEY missing! Add it in Vercel → Settings → Environment Variables.");
     throw new Error("API Key Missing");
   }
 
-  // Using an all-origins proxy to completely bypass browser CORS blocks
-  const proxyUrl = "https://api.allorigins.win/raw?url=";
-  const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
-  const url = proxyUrl + encodeURIComponent(targetUrl);
+  // ✅ Call Gemini directly — no proxy needed, Gemini supports browser CORS
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
 
+  // ✅ Fix role mapping: Gemini only accepts "user" or "model"
   const formattedContents = messages.map(msg => ({
-    role: msg.role,
+    role: msg.role === "user" ? "user" : "model",
     parts: [{ text: msg.text }]
   }));
 
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      systemInstruction: {
-        parts: [{ text: systemPrompt }]
-      },
+      systemInstruction: { parts: [{ text: systemPrompt }] },
       contents: formattedContents,
-      generationConfig: {
-        maxOutputTokens: 150,
-        temperature: 0.9
-      }
+      generationConfig: { maxOutputTokens: 150, temperature: 0.9 }
     }),
   });
 
@@ -572,7 +563,7 @@ export default function App(){
     if(!text.trim()||aiTyping)return;
     push("user",text.trim(),via); setInput("");
     const reply=await aiReply(text.trim(),scene,persona,lang);
-    push("ai",reply);
+    push("model",reply);
     if(autoSpeak&&voice.supported) voice.speak(reply);
   },[aiTyping,push,aiReply,scene,persona,lang,autoSpeak,voice]);
 
